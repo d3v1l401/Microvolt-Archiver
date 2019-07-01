@@ -27,11 +27,11 @@ For the packing of the archive:
 
 ### Help Screen
 
-![HelpScr](awaiting sync)
+![HelpScr](https://github.com/d3v1l401/Microvolt-Archiver/blob/master/RepoMisc/helpscr.png)
 
 ### Unpacking Screen
 
-![UnpackScr](awaiting sync)
+![UnpackScr](https://github.com/d3v1l401/Microvolt-Archiver/blob/master/RepoMisc/unpackscr.png)
 
 ## License
 
