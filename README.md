@@ -6,6 +6,12 @@ MVA is capable of both extracting (and decrypting) and repack the infamous prote
 
 This file contains various binary structures used by the game for items properties, nVidia PhysX properties, server list, channel list, etc..
 
+## Dependencies
+
+Check VC++ Directories for library setup.
+
+* ZipLib - https://bitbucket.org/wbenny/ziplib/wiki/Home
+
 ## Usage
 
 For the help screen:
