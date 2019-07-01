@@ -2,12 +2,14 @@
 #ifndef _ARCHIVE_H_
 #define _ARCHIVE_H_
 
+#include <experimental/filesystem>
 #include <iostream>
 #include <fstream>
 #include <ZipArchive.h>
 #include <ZipFile.h>
 #include <streams/memstream.h>
 #include <methods/DeflateMethod.h>
+using namespace std::experimental::filesystem::v1;
 
 #define ACTION_UNPACK 1
 #define ACTION_PACK   2
@@ -58,7 +60,7 @@ private:
 	ZipArchive::Ptr m_archive = nullptr;
 
 	bool isDirectory(const std::string& _path);
-	std::vector<std::string> getFileList(const std::string& _path);
+	std::vector<directory_entry> getFileList(const std::string& _path);
 
 public:
 

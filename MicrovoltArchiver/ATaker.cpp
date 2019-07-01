@@ -66,7 +66,9 @@ void ATaker::Initialize()
 			Archive::Init(ACTION_PACK, ATaker::TargetName);
 			ArchWriter* _handler = new ArchWriter();
 
-			_handler->PackAll(ATaker::TargetName, ATaker::TargetName + "_pack");
+			if (_handler->PackAll(ATaker::TargetName, (ATaker::TargetName + ".dip"))) {
+				std::cout << Color(AC_WHITE) << "\tProcess " << Color(AC_GREEN) << "completed" << Color(AC_WHITE) << "!\n";
+			}
 
 			_handler->~ArchWriter();
 			break;

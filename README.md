@@ -20,7 +20,7 @@ For the unpacking of the archive:
 
 For the packing of the archive:
 ```
-./MVA.exe -p cdg.dip_out cdg_custom.dip
+./MVA.exe -p cdg.dip_out
 ```
 
 ## License

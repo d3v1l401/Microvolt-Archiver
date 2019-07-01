@@ -1,8 +1,5 @@
 ﻿#include "Archive.h"
 
-
-
-#include <experimental/filesystem>
 #include <vector>
 #include <algorithm>
 #pragma comment(lib, "ZipLib.lib")
@@ -11,7 +8,6 @@
 #pragma comment(lib, "bzip2.lib")
 #include "..\CColors\advconsole.h"
 using namespace AdvancedConsole;
-using namespace std::experimental::filesystem::v1;
 
 std::string			Archive::m_target = "";
 char				Archive::m_action = 0;
@@ -97,6 +93,9 @@ bool Archive::ExtractAll() {
 
 			if (_entry != nullptr) {
 
+				auto _containsSubDir = 0;
+			    _containsSubDir = _entry->GetFullName().find_first_of('/');
+
 				if (_entry->IsDirectory()) {
 					char* dir = new char[MAX_PATH]{ 0 };
 
@@ -112,6 +111,16 @@ bool Archive::ExtractAll() {
 
 					free(dir);
 					continue;
+				}
+
+				if (_containsSubDir > 0 ? true : false) {
+					auto _subDir = _entry->GetFullName().substr(0, _entry->GetFullName().find_first_of('/'));
+					char* dir = new char[MAX_PATH] { 0 };
+
+					sprintf(dir, "%s\\%s", (Archive::m_target + "_out").c_str(), _subDir.c_str());
+					CreateDirectory(dir, NULL);
+
+					free(dir);
 				}
 
 				if (_entry->IsPasswordProtected())
@@ -169,29 +178,67 @@ bool ArchWriter::isDirectory(const std::string& _path) {
 	return (GetFileAttributes(_path.c_str()) != INVALID_FILE_ATTRIBUTES) && (GetFileAttributes(_path.c_str()) & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-std::vector<std::string> ArchWriter::getFileList(const std::string& _path) {
-	std::vector<std::string> _vec;
+std::vector<directory_entry> ArchWriter::getFileList(const std::string& _path) {
+	std::vector<directory_entry> _vec;
 
 	for (const auto& p : recursive_directory_iterator(_path))
 		if (!is_directory(p))
-			_vec.push_back(p.path().generic_string());
+			_vec.push_back(p);
 
 	return _vec;
 }
 
 bool ArchWriter::PackAll(const std::string& _path, const std::string& _outArchive, bool _forceNoEncryption) {
 
+	DeleteFile(_outArchive.c_str());
+
 	if (this->isDirectory(_path)) {
 		auto const _list = this->getFileList(_path);
 		this->m_archive = ZipFile::Open(_outArchive);
 
-		for (auto i = 0; i < _list.size(); i++) 
-			if (!_forceNoEncryption)
-				ZipFile::AddEncryptedFile(_outArchive, _path, Archive::__defaultArchivePassword);
-			else
-				ZipFile::AddFile(_outArchive, _path);
-		
-		ZipFile::SaveAndClose(this->m_archive, _outArchive);
+		{
+			for (auto i = 0; i < _list.size(); i++) {
+				std::ifstream _fileStream(_list[i].path().generic_string(), std::ios::in | std::ios::binary);
+				if (_fileStream.is_open() && _fileStream.good()) {
+
+					auto _currentPath = _list[i].path().generic_string(); // Real Path
+					auto _inZipName = _currentPath.substr(_currentPath.find_first_of("/") + 1, _currentPath.length()); // In-Zip path
+
+					std::cout << Color(AC_WHITE) << "\n[" << Color(AC_GREEN) << "+" << Color(AC_WHITE) << "] Processing \"" << Color(AC_GREEN) << _inZipName << Color(AC_WHITE) << "\"\n";
+
+					ZipArchiveEntry::Ptr _entry = this->m_archive->CreateEntry(_inZipName);
+
+					_entry->SetPassword(Archive::__defaultArchivePassword);
+					_entry->UseDataDescriptor();
+
+					DeflateMethod::Ptr _deflate = DeflateMethod::Create();
+					_deflate->SetCompressionLevel(DeflateMethod::CompressionLevel::L8); // Preserve same compression level of the original.
+
+					_entry->SetCompressionStream(
+						_fileStream, _deflate, ZipArchiveEntry::CompressionMode::Immediate
+					);
+
+					std::ios_base::fmtflags f(std::cout.flags());
+
+					std::cout << Color(AC_GREEN) << " | " << Color(AC_WHITE) << "Size: " << Color(AC_GREEN) << _entry->GetSize() << Color(AC_WHITE) << " bytes -> " << Color(AC_CYAN) << _entry->GetCompressedSize() << Color(AC_WHITE) << " bytes\n"
+						<< Color(AC_GREEN) << " | " << Color(AC_WHITE) << "CRC: " << Color(AC_MAGENTA) << "0x" << std::hex << std::uppercase << _entry->GetCrc32() << Color(AC_WHITE) << "\n"
+						<< Color(AC_GREEN) << " | " << Color(AC_WHITE) << "Is Encrypted: " << Color(AC_CYAN) << (_entry->IsPasswordProtected() ? "Yes" : "No") << Color(AC_WHITE) << "\n"
+						<< Color(AC_GREEN) << " | " << Color(AC_WHITE) << "Compression: " << Color(AC_YELLOW) << (_entry->GetCompressionMethod() == DeflateMethod::CompressionMethod ? "DEFLATE" : "RAW STORED") << Color(AC_WHITE) << "\n"
+						<< "[" << Color(AC_GREEN) << "-" << Color(AC_WHITE) << "]\n";
+
+					std::cout.flags(f);
+
+				} else
+					std::cout << Color(AC_WHITE) << "[" << Color(AC_RED) << "!" << Color(AC_WHITE) << "]" << Color(AC_YELLOW) << "Can not add \"" << Color(AC_GREEN) << _list[i].path().generic_string() << Color(AC_YELLOW) << "\"\n" << Color(AC_WHITE);
+
+			}
+
+			std::ofstream _out(_outArchive, std::ios::out | std::ios::binary);
+			this->m_archive->WriteToStream(_out);
+			_out.flush();
+			_out.close();
+		}
+
 		return true;
 	}
 
