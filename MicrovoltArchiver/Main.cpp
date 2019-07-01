@@ -5,8 +5,6 @@
 #include "CColors/advconsole.h"
 using namespace AdvancedConsole;
 
-#define ENTRY_BANNER  "[ uKOM Archiver ]\nMade by d3vil401 (http://d3vsite.org)\nESEmu Project (http://esemuproject.com)\nCompiled at "
-
 int main(int argc, const char* argv[]) {
 	SetConsoleTitle("Microvolt Archiver");
 
